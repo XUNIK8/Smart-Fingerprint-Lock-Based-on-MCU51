@@ -1,0 +1,424 @@
+C51 COMPILER V9.59.0.0   MAIN                                                              10/14/2019 17:26:30 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\KEIL5\C51\BIN\C51.EXE ..\10.14终\main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\List
+                    -ings\main.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include<reg52.h>
+   2          #include<intrins.h>
+   3          #include"buzz.h"
+   4          #include"key.h"
+   5          #include"uart.h"
+   6          #include"delay.h"
+   7          #include"FPM10A.h"
+   8          #include"lcd_1602.h"
+   9          #include"kaisuo.h"
+  10          #include"i2c.h"
+  11          
+  12          unsigned int w=0;//设置四位密码的初始值
+  13          unsigned int x=0;
+  14          unsigned int y=0;
+  15          unsigned int z=0;
+  16          unsigned int find_fingerid;
+  17          
+  18          
+  19          /***确认密码函数***/
+  20          void confirmpassword()
+  21          {
+  22   1        if(w==1&&x==2&&y==3&&z==4)
+  23   1        {
+  24   2          LCD1602_Display(0xc0,"  Suceeded ^_^  ",0,16);
+  25   2          Delay_Ms(1000);
+  26   2          Buzz_Times(1);
+  27   2          kaisuo();    
+  28   2        }
+  29   1        else
+  30   1        {
+  31   2          LCD1602_Display(0xc0,"  Failed QAQ    ",0,16);
+  32   2          Delay_Ms(1000);
+  33   2          Buzz_Times(3);
+  34   2        }
+  35   1        x=0;
+  36   1        y=0;
+  37   1        z=0;
+  38   1        w=0;
+  39   1      }
+  40          
+  41          
+  42          /****密码到10变0函数****/
+  43          void change()
+  44          {
+  45   1        if(w>9)
+  46   1        {
+  47   2          w-=10;
+  48   2        }
+  49   1        if(x>9)
+  50   1        {
+  51   2          x-=10;
+  52   2        }
+  53   1        if(y>9)
+  54   1        {
+C51 COMPILER V9.59.0.0   MAIN                                                              10/14/2019 17:26:30 PAGE 2   
+
+  55   2          y-=10;
+  56   2        }
+  57   1        if(z>9)
+  58   1        {
+  59   2          z-=10;
+  60   2        } 
+  61   1      }
+  62          
+  63          /****第1.1界面的函数（输入密码解锁）****/
+  64           void display11(void)
+  65           {
+  66   1         LCD1602_WriteCMD(0x01);  //清屏
+  67   1         change();
+  68   1         LCD1602_Display(0x80,"   Input Code   ",0,16); //Input Code
+  69   1         LCD1602_WriteCMD(0xc0+6);
+  70   1         LCD1602_WriteDAT(w+'0');
+  71   1         LCD1602_WriteDAT(x+'0');
+  72   1         LCD1602_WriteDAT(y+'0');
+  73   1         LCD1602_WriteDAT(z+'0');
+  74   1       }
+  75           
+  76           
+  77           /****第1.3界面的函数（进入管理员模式、输入密码界面）****/
+  78           void display13(void)
+  79           { 
+  80   1         LCD1602_WriteCMD(0x01);  //清屏
+  81   1         change();
+  82   1         LCD1602_Display(0x80,"  Input ADCode  ",0,16); //Input Code
+  83   1         LCD1602_WriteCMD(0xc0+6);
+  84   1         LCD1602_WriteDAT(w+'0');
+  85   1         LCD1602_WriteDAT(x+'0');
+  86   1         LCD1602_WriteDAT(y+'0');
+  87   1         LCD1602_WriteDAT(z+'0');
+  88   1      
+  89   1       }
+  90          
+  91           /****第1.3.1界面的函数（管理员密码正确后选择添加/删除指纹）****/
+  92           void display131(void)
+  93           {
+  94   1         LCD1602_WriteCMD(0x01);  //清屏  
+  95   1         LCD1602_Display(0x80,"  ADMINISTRATOR ",0,16);  //第一排显示搜索指纹
+  96   1         LCD1602_Display(0xc0,"  Add     Delete",0,16);  //添加和删除指纹
+  97   1       }
+  98          
+  99          
+ 100          
+ 101           
+ 102           //自己的main函数
+ 103          void main()
+ 104          { 
+ 105   1        LCD1602_Init();     //初始化液晶
+ 106   1        LCD1602_Display(0x80,"     By XHJ     ",0,16);   //液晶开机显示界面
+ 107   1        Delay_Ms(500);
+ 108   1        Uart_Init();      //初始化串口
+ 109   1        Key_Init();       //初始化按键
+ 110   1        Delay_Ms(500);          //延时500MS，等待指纹模块复位
+ 111   1        Device_Check();       //校对指纹模块是否接入正确，液晶做出相应的提示//
+ 112   1        Delay_Ms(1000);     //对接成功界面停留一定时间
+ 113   1        Buzz_Times(2);
+ 114   1        
+ 115   1        /******进入主要页面*****/
+ 116   1        begin:
+C51 COMPILER V9.59.0.0   MAIN                                                              10/14/2019 17:26:30 PAGE 3   
+
+ 117   1        LCD1602_Display(0x80,"    WELCOME     ",0,16);  //第一排显示welcome
+ 118   1        LCD1602_Display(0xc0,"1.P 2.F 3.A 4.C  ",0,16);  //1.Password 2.Finger 3.Administrator
+ 119   1        x=0; //初始化密码
+ 120   1        y=0;
+ 121   1        z=0;
+ 122   1        w=0;
+ 123   1        
+ 124   1        
+ 125   1      while(1)
+ 126   1      {
+ 127   2      //第一个：输入密码解锁界面
+ 128   2        if(KEY1 == 0)
+ 129   2        { 
+ 130   3          Delay_Ms(10);//延迟10ms（空过抖动）   
+ 131   3          if (KEY1==0)        //判断是否还按着
+ 132   3          { 
+ 133   4            Delay_Ms(200);
+ 134   4            display11();//执行命令
+ 135   4          }
+ 136   3          while(1)
+ 137   3          { 
+ 138   4            if(KEY1==0)
+ 139   4            { 
+ 140   5              Delay_Ms(10);
+ 141   5              if(KEY1==0)
+ 142   5              {
+ 143   6                w+=1;
+ 144   6                Delay_Ms(200);
+ 145   6                display11(); //显示第1.1个界面
+ 146   6              }
+ 147   5            }
+ 148   4            if(KEY2==0)
+ 149   4            {
+ 150   5              Delay_Ms(10);
+ 151   5              if(KEY2==0)
+ 152   5              {
+ 153   6                x+=1;       
+ 154   6                Delay_Ms(200);
+ 155   6                display11();
+ 156   6              }
+ 157   5            }
+ 158   4            if(KEY3==0)
+ 159   4            {   
+ 160   5              Delay_Ms(10);       
+ 161   5              if(KEY3==0)
+ 162   5              {
+ 163   6                y+=1;
+ 164   6                Delay_Ms(200);
+ 165   6                display11();
+ 166   6              }
+ 167   5            }
+ 168   4            if(KEY4==0)
+ 169   4            {     
+ 170   5              Delay_Ms(10);
+ 171   5              if(KEY4==0)
+ 172   5              {
+ 173   6                z+=1;
+ 174   6                Delay_Ms(200);
+ 175   6                display11();
+ 176   6              }
+ 177   5            }
+ 178   4            if(KEYOK==0)
+C51 COMPILER V9.59.0.0   MAIN                                                              10/14/2019 17:26:30 PAGE 4   
+
+ 179   4            {       
+ 180   5              Delay_Ms(10);
+ 181   5              if(KEYOK==0)
+ 182   5              {
+ 183   6                confirmpassword();  //确认密码
+ 184   6                goto begin;         //回到初始界面
+ 185   6              }
+ 186   5            }
+ 187   4            if(KEYCANCEL==0)
+ 188   4            {       
+ 189   5              Delay_Ms(10);
+ 190   5              if(KEYCANCEL==0)        
+ 191   5              goto begin;
+ 192   5            }
+ 193   4          }
+ 194   3        }
+ 195   2      
+ 196   2      //第二个：输入指纹解锁界面
+ 197   2        if(KEY2 == 0)
+ 198   2        { 
+ 199   3          Delay_Ms(10);
+ 200   3          if(KEY2==0)
+ 201   3          {
+ 202   4            Delay_Ms(200);
+ 203   4            while(1)
+ 204   4            {
+ 205   5              if(KEYCANCEL==0)
+ 206   5              {
+ 207   6                Delay_Ms(10);
+ 208   6                if(KEYCANCEL==0)
+ 209   6                {
+ 210   7                  goto begin;
+ 211   7                }
+ 212   6              }
+ 213   5              else
+ 214   5                FPM10A_Find_Fingerprint();  //识别指纹（其中包括了页面跳转和开锁函数）
+ 215   5            }
+ 216   4          }
+ 217   3        }
+ 218   2      
+ 219   2      
+ 220   2      //第三个：管理员界面
+ 221   2        if(KEY3 == 0)
+ 222   2        {
+ 223   3          Delay_Ms(10);
+ 224   3          if(KEY3==0)
+ 225   3          {
+ 226   4            Delay_Ms(200);
+ 227   4            AD:             //设置另一个标识点，避免cancel直接跳回主页面
+ 228   4            w=0;
+ 229   4            x=0;
+ 230   4            y=0;
+ 231   4            z=0;
+ 232   4            display13();      //显示第1.3界面（输入管理员密码）
+ 233   4          while(1)
+ 234   4          { 
+ 235   5            if(KEY1==0)
+ 236   5            {     
+ 237   6              Delay_Ms(10);
+ 238   6              if(KEY1==0)
+ 239   6              {
+ 240   7                w+=1;
+C51 COMPILER V9.59.0.0   MAIN                                                              10/14/2019 17:26:30 PAGE 5   
+
+ 241   7                Delay_Ms(200);
+ 242   7                display13();
+ 243   7              }
+ 244   6            }
+ 245   5            if(KEY2==0)
+ 246   5            {     
+ 247   6              Delay_Ms(10);
+ 248   6              if(KEY2==0)
+ 249   6              {
+ 250   7                x+=1;
+ 251   7                Delay_Ms(200);
+ 252   7                display13();
+ 253   7              }
+ 254   6            }
+ 255   5            if(KEY3==0)
+ 256   5            {     
+ 257   6              Delay_Ms(10);
+ 258   6              if(KEY3==0)
+ 259   6              {
+ 260   7                y+=1;
+ 261   7                Delay_Ms(200);
+ 262   7                display13();
+ 263   7              }
+ 264   6            }
+ 265   5            if(KEY4==0)
+ 266   5            {     
+ 267   6              Delay_Ms(10);
+ 268   6              if(KEY4==0)
+ 269   6              {
+ 270   7                z+=1;
+ 271   7                Delay_Ms(200);
+ 272   7                display13();
+ 273   7              }
+ 274   6            }
+ 275   5            if(KEYOK==0) //进入1.3.1界面（管理员界面）
+ 276   5            {     
+ 277   6              Delay_Ms(10);
+ 278   6              if(KEYOK==0)
+ 279   6              {
+ 280   7                if(w==4&&x==3&&y==2&&z==1)
+ 281   7                {
+ 282   8                  LCD1602_Display(0xc0,"  Suceeded ^_^  ",0,16);
+ 283   8                  Delay_Ms(1500);
+ 284   8                  LCD1602_WriteCMD(0x01);   
+ 285   8                  display131();         //回到1.3.1界面
+ 286   8                  while(1)
+ 287   8                  {                                   
+ 288   9                    if(local_date==0)                       //local date作为屏幕上 “*” 位置的选择变量
+ 289   9                    {
+ 290  10                      LCD1602_Display(0x80,  "  ",0,2);
+ 291  10                      LCD1602_Display(0xc0,  " *",0,2);
+ 292  10                      LCD1602_Display(0xc0+8,"  ",0,2);   
+ 293  10                    }
+ 294   9                    else if(local_date==1)
+ 295   9                    {
+ 296  10                      LCD1602_Display(0x80,  "  ",0,2);
+ 297  10                      LCD1602_Display(0xc0,  "  ",0,2);
+ 298  10                      LCD1602_Display(0xc0+8," *",0,2);   
+ 299  10                    }     
+ 300   9                  //确认键
+ 301   9                    if(KEYOK == 0)
+ 302   9                    {  
+C51 COMPILER V9.59.0.0   MAIN                                                              10/14/2019 17:26:30 PAGE 6   
+
+ 303  10                      while(KEYOK == 0);//等待松开按键                
+ 304  10                      switch(local_date)
+ 305  10                      {                                                                         
+ 306  11                        case 0:  //添加指纹
+ 307  11                        FPM10A_Add_Fingerprint();     //添加指纹（包括成功和失败两种情况的界面显示）
+ 308  11                        goto AD;                  
+ 309  11                        case 1: //清空指纹
+ 310  11                        FPM10A_Delete_All_Fingerprint();//删除指纹（包括确认删除、成功和失败的界面显示）
+ 311  11                        goto AD; //回到管理员界面（避免直接返回初始界面）
+ 312  11                      }
+ 313  10                    }
+ 314   9              //切换键(切换“*” 的位置)
+ 315   9                    if(KEY1 == 0)
+ 316   9                    {
+ 317  10                      while(KEY1 == 0); //等待松开按键        
+ 318  10                      if(local_date<=1)
+ 319  10                      {
+ 320  11                        local_date++;
+ 321  11                        if(local_date==2) //只有0、1两种情况，到2归零
+ 322  11                          local_date=0;           
+ 323  11                      }   
+ 324  10                    } 
+ 325   9                    if(KEYCANCEL==0)
+ 326   9                    {     
+ 327  10                      Delay_Ms(10);
+ 328  10                      if(KEYCANCEL==0)
+ 329  10                        goto begin;    //回到初始界面
+ 330  10                    }
+ 331   9                    Delay_Ms(100); //延时判断100MS检测一次    
+ 332   9                  }
+ 333   8                }
+ 334   7            else
+ 335   7            {
+ 336   8              LCD1602_Display(0xc0,"  Failed QAQ    ",0,16);
+ 337   8              Delay_Ms(1500);         
+ 338   8            }
+ 339   7            x=0;
+ 340   7            y=0;
+ 341   7            z=0;
+ 342   7            w=0;
+ 343   7            goto begin; 
+ 344   7          }
+ 345   6        }   
+ 346   5            if(KEYCANCEL==0)
+ 347   5            {         
+ 348   6              Delay_Ms(10);
+ 349   6              if(KEYCANCEL==0)
+ 350   6              goto begin;
+ 351   6            }
+ 352   5          }
+ 353   4         }
+ 354   3       }
+ 355   2      /***第四个界面(查询上一次用指纹解锁的指纹id号)***/  
+ 356   2        if(KEY4==0)
+ 357   2        {
+ 358   3          Delay_Ms(10);
+ 359   3          if(KEY4==0)
+ 360   3          {
+ 361   4            Delay_Ms(200);
+ 362   4            LCD1602_WriteCMD(0x01);
+ 363   4            LCD1602_Display(0x80,"      CHECK     ",0,16);
+ 364   4          }
+C51 COMPILER V9.59.0.0   MAIN                                                              10/14/2019 17:26:30 PAGE 7   
+
+ 365   3          while(1)
+ 366   3          {
+ 367   4            if(KEYOK==0)
+ 368   4            {
+ 369   5              Delay_Ms(10);
+ 370   5              if(KEYOK==0)
+ 371   5              {
+ 372   6                find_fingerid=At24c02Read(1); //从24C02中读取ID号
+ 373   6                LCD1602_WriteCMD(0xc0+7);
+ 374   6                LCD1602_WriteDAT(find_fingerid/100+48);
+ 375   6                LCD1602_WriteDAT(find_fingerid%100/10+48);
+ 376   6                LCD1602_WriteDAT(find_fingerid%100%10+48);  
+ 377   6              }
+ 378   5            }
+ 379   4            if(KEYCANCEL==0)
+ 380   4            {
+ 381   5              Delay_Ms(10);
+ 382   5              if(KEYCANCEL==0)
+ 383   5                goto begin;
+ 384   5            }
+ 385   4          }
+ 386   3        }
+ 387   2      }
+ 388   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1411    ----
+   CONSTANT SIZE    =    177    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     10    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

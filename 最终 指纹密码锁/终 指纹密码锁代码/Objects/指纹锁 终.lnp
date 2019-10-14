@@ -1,0 +1,12 @@
+".\Objects\STARTUP.obj",
+".\Objects\buzz.obj",
+".\Objects\delay.obj",
+".\Objects\FPM10A.obj",
+".\Objects\i2c.obj",
+".\Objects\kaisuo.obj",
+".\Objects\key.obj",
+".\Objects\lcd_1602.obj",
+".\Objects\main.obj",
+".\Objects\uart.obj" 
+TO ".\Objects\Ö¸ÎÆËø ÖÕ" 
+PRINT(".\Listings\Ö¸ÎÆËø ÖÕ.m51") RAMSIZE(256) 
